@@ -1,0 +1,12 @@
+emacParser - https://stackoverflow.com/questions/50307824/firebase-functions-cannot-deploy-syntaxerror-unexpected-token-function
+emac2 - https://github.com/eslint/eslint/issues/10307 
+FAZIT: line 114:38 (placeword): words[wordIndex] = { ...words[wordIndex], direction: "across", xPos: x, yPos: y }
+...words = spread Object 
+Ist nicht von Eslint supported, warum? weil teil von emcaVersion 2018. emca2018 hat aber Vorschriften zur form des Codes?!
+LÖSUNG?: spread Object -> Object.assign() umwandeln
+
+NEvermind, hat zwar funktioniert, jedoch löst es das problem nicht. ecma version 2018 löst es auch. Grösseres Problem ist korrektur von Form. "Expected indentation of mimimimi"
+LÖSUNG: Now setting all of the bullshit rules to 0 (off) manually
+Gelöst, hoffentlich
+
+Es waren Zwei fehler 1. ... Operator auf Objekte war nicht supported 2. Jede menge Syntax Rules aus welchem grund auch immer

@@ -1,86 +1,3 @@
-const functions = require("firebase-functions");
-const admin = require("firebase-admin");
-admin.initializeApp();
-
-const db = admin.firestore()
-
-// // Create and Deploy Your First Cloud Functions
-// // https://firebase.google.com/docs/functions/write-firebase-functions
-//
-// exports.helloWorld = functions.https.onRequest((request, response) => {
-//   functions.logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
-
-exports.joinGame = functions.firestore
-    .document("/activeGame/{gameKey}/players/{playerUID}")
-    .onCreate(async (snap, context) => {
-        const gameKey = context.params.gameKey
-        const gameSnapshot = await db.doc("activeGame/" + gameKey).get()
-        if (!gameSnapshot.exists) {
-            return snap.ref.set({
-                invalid: true,
-            })
-        }
-        const gameData = gameSnapshot.data()
-        functions.logger.log("GAMEDATA")
-        functions.logger.log(gameData)
-        let words = []
-        for (let i = 0; i < gameData.crosswordData.length; i++) {
-            words.push(gameData.crosswordData[i].word.word)
-        }
-        return snap.ref.set({ words: words }, { merge: true })
-    })
-
-exports.createCrossword = functions.firestore
-    .document("/teachers/{teacherId}/games/{gameId}")
-    .onWrite((change, context) => {
-        //If document.after doesnt exist, then Document is being deleted and doesnt need a new Crossword
-        if (!change.after.exists) {
-            return
-        }
-        //Only Change if user Requested, not because of Crossword Generation (Crosswordgeneration Changes Document, which results in infinite Loop)
-        if (change.after.data().change === false) {
-            return
-        }
-        const data = change.after.data()
-
-        //Get Words for the Crossword
-        let crosswordWords = { words: [] }
-        if (data.questions) {
-            data.questions.forEach((element) => {
-                crosswordWords.words.push(element.a)
-            });
-        }
-        if (data.text) {
-            let textElements = data.text.split("_")
-            //for every second Element starting at 1: "[0]Bla blah _[1]word_[2] bla bla _[3]word_[4]."
-            for (let i = 1; i < textElements.length; i += 2) {
-                crosswordWords.words.push(textElements[i])
-            }
-        }
-
-        //Generate Crossword
-        let crossword = getStrongCrossword(20, 10, crosswordWords).wordPlacements
-        //Return Promise because of Magical Reasons (https://firebase.google.com/docs/functions/firestore-events -> Schreiben von Daten)
-        return change.after.ref.set({
-            crossword: crossword,
-            change: false,
-        }, { merge: true })
-    });
-
-
-
-
-
-
-
-
-
-//------------------------------------------------
-//Crossword Generation Functions
-//------------------------------------------------
-
 function getStrongCrossword(gridSize, invocations, input) {
 
     console.log("Creating crosswords...");
@@ -261,3 +178,27 @@ let printGrid = (grid, score) => {
     }
 }
 
+console.log(getStrongCrossword(20, 10, {
+    "words": [
+        "tiger",
+        "bird",
+        "banana",
+        "laptop",
+        "java code",
+        "principal",
+        "student",
+        "watch",
+        "mouse",
+        "keyboard",
+        "teacher",
+        "water",
+        "mantle",
+        "pencil",
+        "sneakers",
+        "socks",
+        "hydration",
+        "water bottles",
+        "backpack",
+        "united states of america"
+    ]
+}).wordPlacements)

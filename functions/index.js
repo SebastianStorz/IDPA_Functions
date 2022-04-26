@@ -81,6 +81,13 @@ exports.createCrossword = functions.firestore
 //Crossword Generation Functions
 //------------------------------------------------
 
+let printGrid = (grid, score) => {
+    console.log("Score: " + score)
+    for (let i = 0; i < grid.length; i++) {
+        console.log(grid[i].join(" "));
+    }
+}
+
 function getStrongCrossword(gridSize, invocations, input) {
 
     console.log("Creating crosswords...");
@@ -216,6 +223,7 @@ function getStrongCrossword(gridSize, invocations, input) {
                     crossword[i][j] = ".";
                 }
             }
+            wordPlacements.push({word: {word: words[0].word, length: words[0].length}, pos: {x: Math.floor(gridSize / 2) - Math.floor(words[0].length / 2), y: Math.ceil(gridSize / 2), dir: "across"}})
             placeWord(0, [Math.floor(gridSize / 2) - Math.floor(words[0].length / 2), Math.ceil(gridSize / 2), "across"]);
             let exit = false
             while (!exit) {
@@ -248,16 +256,11 @@ function getStrongCrossword(gridSize, invocations, input) {
         }
 
         crosswordCollection = quicksort(crosswordCollection)
+        printGrid(crosswordCollection[0].crossword, crosswordCollection[0].score)
+        console.log(crosswordCollection[0])
         return crosswordCollection[0]
     }
 
     return getBestCrossword(invocations)
-}
-
-let printGrid = (grid, score) => {
-    console.log("Score: " + score)
-    for (let i = 0; i < grid.length; i++) {
-        console.log(grid[i].join(" "));
-    }
 }
 

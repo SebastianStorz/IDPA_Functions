@@ -12,7 +12,7 @@ const db = admin.firestore()
 //   response.send("Hello from Firebase!");
 // });
 
-exports.joinGame = functions.firestore
+/* exports.joinGame = functions.firestore
     .document("/activeGame/{gameKey}/players/{playerUID}")
     .onCreate(async (snap, context) => {
         const gameKey = context.params.gameKey
@@ -30,6 +30,29 @@ exports.joinGame = functions.firestore
             words.push(gameData.crosswordData[i].word.word)
         }
         return snap.ref.set({ words: words }, { merge: true })
+    }) */
+exports.newGuess = functions.firestore
+    .document("activeGame/{gameKey}/players/{playerUID}")
+    .onUpdate(async (change, context) => {
+        const old = change.before.data().pastGuesses
+        const recent = change.after.data().pastGuesses
+        if (old.length !== recent.length) {
+            let guessed = change.before.data().guessed
+            let guess = recent.filter(x => !old.includes(x))
+            if (guess.length !== 1) {
+                return
+            }
+            let crosswordData = await (await db.doc(`activeGame/${context.params.gameKey}`).get()).data().crosswordData
+            crosswordData.forEach(idx => {
+                if (idx.word.word.toLowerCase() === guess[0].toLowerCase().replace(" ", "-")) {
+                    console.log("Correct guess")
+                    guessed.push(idx)
+                }
+            })
+            return change.after.ref.set({
+                guessed: guessed
+            }, { merge: true })
+        } return;
     })
 
 exports.createCrossword = functions.firestore
@@ -61,7 +84,7 @@ exports.createCrossword = functions.firestore
         }
 
         //Generate Crossword
-        let crossword = getStrongCrossword(20, 10, crosswordWords).wordPlacements
+        let crossword = getStrongCrossword(15, 10, crosswordWords).wordPlacements
         //Return Promise because of Magical Reasons (https://firebase.google.com/docs/functions/firestore-events -> Schreiben von Daten)
         return change.after.ref.set({
             crossword: crossword,
@@ -223,7 +246,7 @@ function getStrongCrossword(gridSize, invocations, input) {
                     crossword[i][j] = ".";
                 }
             }
-            wordPlacements.push({word: {word: words[0].word, length: words[0].length}, pos: {x: Math.floor(gridSize / 2) - Math.floor(words[0].length / 2), y: Math.ceil(gridSize / 2), dir: "across"}})
+            wordPlacements.push({ word: { word: words[0].word, length: words[0].length }, pos: { x: Math.floor(gridSize / 2) - Math.floor(words[0].length / 2), y: Math.ceil(gridSize / 2), dir: "across" } })
             placeWord(0, [Math.floor(gridSize / 2) - Math.floor(words[0].length / 2), Math.ceil(gridSize / 2), "across"]);
             let exit = false
             while (!exit) {

@@ -40,9 +40,6 @@ exports.newGuess = functions.region('europe-west6').firestore
             if (old.length !== recent.length) {
                 let guessed = change.before.data().guessed
                 let guess = recent[recent.length - 1]
-                if (guess.length !== 1) {
-                    return
-                }
                 let crosswordData = await (await db.doc(`activeGame/${context.params.gameKey}`).get()).data().crosswordData
                 crosswordData.forEach(idx => {
                     if (idx.word.word.toLowerCase() === guess.toLowerCase().replace(" ", "-")) {

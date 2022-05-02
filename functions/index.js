@@ -31,7 +31,7 @@ const db = admin.firestore()
         }
         return snap.ref.set({ words: words }, { merge: true })
     }) */
-exports.newGuess = functions.firestore
+exports.newGuess = functions.region('europe-west6').firestore
     .document("activeGame/{gameKey}/players/{playerUID}")
     .onUpdate(async (change, context) => {
         if (await (await db.doc(`activeGame/${context.params.gameKey}/players/invis`).get()).data().gameStarted) {
@@ -39,13 +39,13 @@ exports.newGuess = functions.firestore
             const recent = change.after.data().pastGuesses
             if (old.length !== recent.length) {
                 let guessed = change.before.data().guessed
-                let guess = recent.filter(x => !old.includes(x))
+                let guess = recent[recent.length - 1]
                 if (guess.length !== 1) {
                     return
                 }
                 let crosswordData = await (await db.doc(`activeGame/${context.params.gameKey}`).get()).data().crosswordData
                 crosswordData.forEach(idx => {
-                    if (idx.word.word.toLowerCase() === guess[0].toLowerCase().replace(" ", "-")) {
+                    if (idx.word.word.toLowerCase() === guess.toLowerCase().replace(" ", "-")) {
                         console.log("Correct guess")
                         guessed.push(idx)
                     }
@@ -57,7 +57,7 @@ exports.newGuess = functions.firestore
         } return;
     })
 
-exports.createCrossword = functions.firestore
+exports.createCrossword = functions.region('europe-west6').firestore
     .document("/teachers/{teacherId}/games/{gameId}")
     .onWrite((change, context) => {
         //If document.after doesnt exist, then Document is being deleted and doesnt need a new Crossword
@@ -79,8 +79,10 @@ exports.createCrossword = functions.firestore
         }
         if (data.text) {
             let textElements = data.text.split("_")
+            console.log("Text: ", textElements)
             //for every second Element starting at 1: "[0]Bla blah _[1]word_[2] bla bla _[3]word_[4]."
             for (let i = 1; i < textElements.length; i += 2) {
+                console.log("I: " + i, "Word: " + textElements[i])
                 crosswordWords.words.push(textElements[i])
             }
         }

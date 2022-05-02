@@ -34,24 +34,26 @@ const db = admin.firestore()
 exports.newGuess = functions.firestore
     .document("activeGame/{gameKey}/players/{playerUID}")
     .onUpdate(async (change, context) => {
-        const old = change.before.data().pastGuesses
-        const recent = change.after.data().pastGuesses
-        if (old.length !== recent.length) {
-            let guessed = change.before.data().guessed
-            let guess = recent.filter(x => !old.includes(x))
-            if (guess.length !== 1) {
-                return
-            }
-            let crosswordData = await (await db.doc(`activeGame/${context.params.gameKey}`).get()).data().crosswordData
-            crosswordData.forEach(idx => {
-                if (idx.word.word.toLowerCase() === guess[0].toLowerCase().replace(" ", "-")) {
-                    console.log("Correct guess")
-                    guessed.push(idx)
+        if (await (await db.doc(`activeGame/${context.params.gameKey}/players/invis`).get()).data().gameStarted) {
+            const old = change.before.data().pastGuesses
+            const recent = change.after.data().pastGuesses
+            if (old.length !== recent.length) {
+                let guessed = change.before.data().guessed
+                let guess = recent.filter(x => !old.includes(x))
+                if (guess.length !== 1) {
+                    return
                 }
-            })
-            return change.after.ref.set({
-                guessed: guessed
-            }, { merge: true })
+                let crosswordData = await (await db.doc(`activeGame/${context.params.gameKey}`).get()).data().crosswordData
+                crosswordData.forEach(idx => {
+                    if (idx.word.word.toLowerCase() === guess[0].toLowerCase().replace(" ", "-")) {
+                        console.log("Correct guess")
+                        guessed.push(idx)
+                    }
+                })
+                return change.after.ref.set({
+                    guessed: guessed
+                }, { merge: true })
+            } return;
         } return;
     })
 
